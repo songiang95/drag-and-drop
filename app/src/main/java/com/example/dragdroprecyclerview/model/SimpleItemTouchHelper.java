@@ -1,7 +1,6 @@
 package com.example.dragdroprecyclerview.model;
 
 import android.util.Log;
-import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.ItemTouchHelper;
@@ -46,26 +45,26 @@ public class SimpleItemTouchHelper extends ItemTouchHelper.Callback {
             oldTarget.itemView.setAlpha(1f);
             oldTarget = target;
             oldTarget.itemView.setAlpha(0.5f);
-
         }
 
         if (mAdapter != null) {
             if (!(target instanceof Adapter.FolderViewHolder)) {
-                Log.d("abba", "target position: " + target.getAdapterPosition());
                 mAdapter.onItemMove(viewHolder.getAdapterPosition(), target.getAdapterPosition());
                 mFromPos = viewHolder.getAdapterPosition();
                 mToPos = target.getAdapterPosition();
                 return true;
             } else {
-                Log.d("abba", "target position: " + target.getAdapterPosition());
                 mFromPos = viewHolder.getAdapterPosition();
                 mToPos = target.getAdapterPosition();
+                Folder folder = ((Folder) mAdapter.getItem(mToPos));
+                if (!(((Folder) mAdapter.getItem(mToPos)).isExpanded())) {
+                    mAdapter.expandFolder(folder, mToPos);
+                }
                 return true;
             }
         }
         return false;
     }
-
 
     @Override
     public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
@@ -80,7 +79,7 @@ public class SimpleItemTouchHelper extends ItemTouchHelper.Callback {
         BookmarkItem toItem = mAdapter.getItem(mToPos);
 
         if (mFromPos != mToPos && fromItem instanceof File && toItem instanceof Folder) {
-            if (!((File) fromItem).isBelongToFolder()) {
+            if (!(((File) fromItem).isBelongToFolder())) {
                 //case 1. move file từ ngoài vào folder
                 mAdapter.onItemMoved(mFromPos, mToPos, 1);
                 Log.d("abba", "di chuyển từ ngoài vào folder");

@@ -34,6 +34,17 @@ public class Folder implements BookmarkItem, File.FileCallback {
         this.name = name;
     }
 
+    public void addFile(BookmarkItem item, int position) {
+        if (item instanceof File) {
+            ((File) item).setCallback(this);
+            ((File) item).setBelongToFolder(true);
+            if (position != 0) {
+                position--;
+            }
+            mListFile.add(position, item);
+        }
+    }
+
     public void addFile(BookmarkItem item) {
         if (item instanceof File) {
             ((File) item).setCallback(this);
@@ -42,10 +53,14 @@ public class Folder implements BookmarkItem, File.FileCallback {
         }
     }
 
+
     public void removeFile(BookmarkItem item) {
         if (item instanceof File && mListFile.contains(item)) {
             Log.d("abba", "file removed: ");
             mListFile.remove(item);
+            if (mListFile.isEmpty()) {
+                isExpanded = false;
+            }
         }
     }
 

@@ -47,35 +47,39 @@ public class Adapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     public boolean onItemMoved(int fromPos, int toPos, int moveCase) {
         File fromFile = (File) mList.get(fromPos);
+        Folder toFolder;
+        File temp;
+        int folderPosition;
         switch (moveCase) {
             case 1://move file từ ngoài vào folder
-                fromFile.setBelongToFolder(true);
-                ((Folder) mList.get(toPos)).addFile(fromFile);
-//                if (((Folder) mList.get(toPos)).isExpanded()) {
-//                    Log.d("abba", "itemMoved 1");
-//                    int position = toPos + ((Folder) mList.get(toPos)).getNumberOfFile();
-//                    mList.remove(fromFile);
-//                    mList.add(toPos + 1, fromFile);
-//                    notifyItemRemoved(fromPos);
-//                    notifyItemInserted(position);
-//                }
-                mList.remove(fromFile);
-                notifyItemRemoved(fromPos);
+                toFolder = (Folder) mList.get(toPos);
+                if (!toFolder.isExpanded()) {
+                    toFolder.addFile(fromFile, 0);
+                    fromFile.setBelongToFolder(true);
+                    mList.remove(fromFile);
+                    notifyItemRemoved(fromPos);
+                } else {
+                    temp = new File(fromFile);
+                    mList.add(toPos, temp);
+                    mList.remove(fromFile);
+                    notifyItemMoved(fromPos, toPos);
+                }
+
                 return true;
             case 2://move file từ folder sang folder khi folder đang đóng
-                File temp1 = new File(fromFile);
-                temp1.getContainerFolder().removeFile(fromFile);
-                ((Folder) mList.get(toPos)).addFile(fromFile);
-//                if (((Folder) mList.get(toPos)).isExpanded()) {
-//                    Log.d("abba", "onItemMoved 2 ");
-//                    int position = toPos + ((Folder) mList.get(toPos)).getNumberOfFile();
-//                    mList.remove(fromFile);
-//                    mList.add(toPos + 1, fromFile);
-//                    notifyItemRemoved(fromPos);
-//                    notifyItemInserted(position);
-//                }
-                mList.remove(fromFile);
-                notifyItemRemoved(fromPos);
+                temp = new File(fromFile);
+                temp.getContainerFolder().removeFile(fromFile);
+                toFolder = (Folder) mList.get(toPos);
+                if (!toFolder.isExpanded()) {
+                    toFolder.addFile(fromFile);
+                    mList.remove(fromFile);
+                    notifyItemRemoved(fromPos);
+                } else {
+                    mList.add(toPos, temp);
+                    mList.remove(fromFile);
+                    notifyItemMoved(fromPos, toPos);
+                }
+
                 return true;
 
             case 3://move file từ folder ra ngoài
@@ -88,10 +92,18 @@ public class Adapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 File temp3 = new File(fromFile);
                 temp3.getContainerFolder().removeFile(fromFile);
                 temp3 = ((File) mList.get(toPos));
-                temp3.getContainerFolder().addFile(fromFile);
+                toFolder = temp3.getContainerFolder();
+                folderPosition = mList.indexOf(toFolder);
+                toFolder.addFile(fromFile, toPos - folderPosition - 1);
+                Log.d("abba", "to position : " + toPos);
+                Log.d("abba", "folder position : " + folderPosition);
                 return true;
             case 5:// move file từ ngoài vào folder đang mở
-                ((File) mList.get(toPos)).getContainerFolder().addFile(fromFile);
+                toFolder = ((File) mList.get(toPos)).getContainerFolder();
+                folderPosition = mList.indexOf(toFolder);
+                toFolder.addFile(fromFile, toPos - folderPosition - 1);
+                Log.d("abba", "to position : " + toPos);
+                Log.d("abba", "folder position : " + folderPosition);
             default:
                 return false;
         }
@@ -100,6 +112,22 @@ public class Adapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     public BookmarkItem getItem(int position) {
         return mList.get(position);
+    }
+
+    public void expandFolder(Folder folder, int position) {
+        if (folder.getNumberOfFile() != 0) {
+            folder.setExpanded(true);
+            mList.addAll(position + 1, folder.getAllFile());
+            notifyItemRangeInserted(position + 1, folder.getNumberOfFile());
+        }
+    }
+
+    public void collapseFolder(Folder folder, int position) {
+        if (folder.getNumberOfFile() != 0) {
+            folder.setExpanded(false);
+            mList.removeAll(folder.getAllFile());
+            notifyItemRangeRemoved(position + 1, folder.getNumberOfFile());
+        }
     }
 
     //Implementation
@@ -155,14 +183,10 @@ public class Adapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             Folder folder = ((Folder) mList.get(position));
             if (folder.isExpanded()) {
                 // Đóng folder lại
-                folder.setExpanded(false);
-                mList.removeAll(folder.getAllFile());
-                notifyItemRangeRemoved(position + 1, folder.getNumberOfFile());
+                collapseFolder(folder, position);
             } else {
                 // Mở folder ra
-                folder.setExpanded(true);
-                mList.addAll(position + 1, folder.getAllFile());
-                notifyItemRangeInserted(position + 1, folder.getNumberOfFile());
+                expandFolder(folder, position);
             }
         }
     }
